@@ -1,40 +1,28 @@
 import express from 'express';
-import passport from 'passport';
 import bodyParser from 'body-parser';
-import config from './config/index';
-const app = express();
-const expressConfig: any = config.express;
+import userController from './controller/user';
+import bookController from './controller/book';
+import { handleApiResponse, handleError } from './middlewares';
+import { createConnection } from 'typeorm';
+import 'reflect-metadata';
 
-Object.keys(expressConfig).forEach((key: string) => {
-    app.set(key, expressConfig[key]);
-});
+const app = express();
+
+app.set('port', process.env.PORT || 4000);
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.raw());
-app.use(bodyParser.text());
+app.use(handleApiResponse);
 
-app.get('/hello/:id', (req, res) => {
-    const result = {
-        params: req.params,
-        query: req.query,
-        route: req.route,
-    };
-    // res.end(`${JSON.stringify(result)}`);
-    // res.jsonp('cb(a)');
-    res.sendStatus(401);
-});
-app.post('/hi', (req, res) => {
-    const result = {
-        params: req.params,
-        query: req.query,
-        body: req.body,
-    };
-    res.end(JSON.stringify(result));
-});
-app.listen(app.get('port'), (e: any) => {
+app.use('/user', userController);
+app.use('/book', bookController);
+
+app.use(handleError);
+app.listen(app.get('port'), async (e: any) => {
     if (e) {
         console.log(`[error] ${e.message}`);
         return;
     }
+    await createConnection();
     console.log(`[app start] listen on port:${app.get('port')}`);
 });
